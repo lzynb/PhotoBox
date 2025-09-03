@@ -48,14 +48,7 @@
 npm install
 ```
 
-### 3. **环境变量配置**
-创建 `.env.local` 文件：
-```env
-# Remove.bg API Key (用于背景移除功能)
-REMOVE_BG_API_KEY=your_api_key_here
-```
-
-### 4. **启动开发服务器**
+### 3. **启动开发服务器**
 ```bash
 npm run dev
 ```
