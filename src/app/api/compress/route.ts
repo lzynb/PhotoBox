@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import sharp from 'sharp';
 
 interface CompressionParams {
   quality: number;
@@ -110,110 +109,25 @@ export async function POST(request: NextRequest) {
       format = formatParam as 'jpeg' | 'png' | 'webp';
     }
 
-    // Convert file to buffer
-    const buffer = Buffer.from(await file.arrayBuffer());
-
-    // Get original image metadata
-    const originalMetadata = await sharp(buffer).metadata();
-    
-    if (!originalMetadata.width || !originalMetadata.height) {
-      return NextResponse.json(
-        { error: 'Unable to read image dimensions' },
-        { status: 400 }
-      );
-    }
-
-    // Process image with Sharp
-    let sharpInstance = sharp(buffer);
-
-    // Resize if dimensions are specified
-    if (maxWidth || maxHeight) {
-      sharpInstance = sharpInstance.resize(maxWidth, maxHeight, {
-        fit: 'inside',
-        withoutEnlargement: true
-      });
-    }
-
-    // Apply compression based on format
-    let compressedBuffer: Buffer;
-    let mimeType: string;
-
-    switch (format) {
-      case 'jpeg':
-        compressedBuffer = await sharpInstance
-          .jpeg({ quality: Math.round(quality * 100) })
-          .toBuffer();
-        mimeType = 'image/jpeg';
-        break;
-      
-      case 'png':
-        compressedBuffer = await sharpInstance
-          .png({ quality: Math.round(quality * 100) })
-          .toBuffer();
-        mimeType = 'image/png';
-        break;
-      
-      case 'webp':
-        compressedBuffer = await sharpInstance
-          .webp({ quality: Math.round(quality * 100) })
-          .toBuffer();
-        mimeType = 'image/webp';
-        break;
-      
-      default:
-        compressedBuffer = await sharpInstance
-          .jpeg({ quality: Math.round(quality * 100) })
-          .toBuffer();
-        mimeType = 'image/jpeg';
-    }
-
-    // Get compressed image metadata
-    const compressedMetadata = await sharp(compressedBuffer).metadata();
-
-    // Calculate compression statistics
+    // 由于云端（例如 Vercel）不提供 sharp，本接口在云端禁用，前端已使用 Canvas 在客户端完成压缩。
+    // 返回元数据提示使用客户端压缩结果。
     const originalSize = file.size;
-    const compressedSize = compressedBuffer.length;
-    const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
-
-    // Return compressed image as buffer with metadata
-    return new NextResponse(compressedBuffer, {
-      status: 200,
-      headers: {
-        'Content-Type': mimeType,
-        'Content-Length': compressedBuffer.length.toString(),
-        'X-Original-Size': originalSize.toString(),
-        'X-Compressed-Size': compressedSize.toString(),
-        'X-Compression-Ratio': compressionRatio,
-        'X-Original-Width': originalMetadata.width.toString(),
-        'X-Original-Height': originalMetadata.height.toString(),
-        'X-Compressed-Width': (compressedMetadata.width || originalMetadata.width).toString(),
-        'X-Compressed-Height': (compressedMetadata.height || originalMetadata.height).toString(),
-        'X-Quality': quality.toString(),
-        'X-Format': format,
-        'Cache-Control': 'no-cache',
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Server compression is disabled in this deployment. Please use client-side compression.',
+        originalSize,
+        quality,
+        maxWidth: maxWidth ?? null,
+        maxHeight: maxHeight ?? null,
+        format
       },
-    });
+      { status: 501 }
+    );
 
   } catch (error) {
     console.error('Compression error:', error);
     
-    // Handle specific Sharp errors
-    if (error instanceof Error) {
-      if (error.message.includes('Input buffer contains unsupported image format')) {
-        return NextResponse.json(
-          { error: 'Unsupported image format or corrupted image file' },
-          { status: 400 }
-        );
-      }
-      
-      if (error.message.includes('memory')) {
-        return NextResponse.json(
-          { error: 'Image too large to process. Please try a smaller image.' },
-          { status: 413 }
-        );
-      }
-    }
-
     return NextResponse.json(
       { error: 'Internal server error during image compression' },
       { status: 500 }

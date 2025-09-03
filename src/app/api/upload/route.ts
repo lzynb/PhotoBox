@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import sharp from 'sharp'
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,23 +30,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Convert file to buffer
-    const buffer = Buffer.from(await file.arrayBuffer())
-    
-    // Process image with Sharp
-    const processedImage = await sharp(buffer)
-      .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 80 })
-      .toBuffer()
-
-    // Return processed image data
+    // 云端禁用 sharp：该端点仅做上传校验与占位，前端负责实际处理
     return NextResponse.json({
       success: true,
-      originalSize: file.size,
-      processedSize: processedImage.length,
-      format: 'webp',
-      width: 800,
-      height: 800
+      message: 'Upload received. Image processing is handled on the client in this deployment.',
+      originalSize: file.size
     })
 
   } catch (error) {
