@@ -1,0 +1,19 @@
+# 技术栈约束
+- Use Next.js 14 with App Router for the frontend and API routes.
+- Use TypeScript strictly with no explicit `any`.
+- Use Tailwind CSS for styling, follow the official documentation.
+- Use Sharp for server-side image processing.
+
+# 代码质量约束
+- Always use functional components with React hooks.
+- Prefer `const` and `let` over `var`:cite[4].
+- Write clear comments for complex logic.
+- Implement proper error handling with try-catch blocks and user feedback.
+
+# 性能约束
+- Images processed on the client-side should be optimized to avoid blocking the main thread for long.
+- Server-side operations should be efficient and avoid unnecessary computations.
+
+# API约束
+- API routes must return appropriate HTTP status codes and JSON responses.
+- Use environment variables for sensitive data like API keys.
