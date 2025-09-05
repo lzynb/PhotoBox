@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 移除 experimental.appDir，Next.js 13.2.4 默认支持
   experimental: {
+    appDir: true,
     serverComponentsExternalPackages: ['tesseract.js'],
   },
   images: {
