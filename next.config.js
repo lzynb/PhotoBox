@@ -1,13 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // 移除 experimental.appDir，Next.js 13.2.4 默认支持
   experimental: {
-    appDir: true,
     serverComponentsExternalPackages: ['tesseract.js'],
   },
   images: {
     formats: ['image/webp'],
   },
   swcMinify: true,
+  // 简化 webpack 配置，移除可能导致构建问题的配置
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -30,17 +31,6 @@ const nextConfig = {
       };
     }
     
-    // 配置 Tesseract.js worker 处理
-    config.module.rules.push({
-      test: /\.worker\.js$/,
-      use: { 
-        loader: 'worker-loader',
-        options: {
-          inline: true,
-        }
-      },
-    });
-    
     return config;
   },
   // 添加额外的兼容性配置
@@ -50,6 +40,8 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // 确保输出配置正确
+  output: 'standalone',
 }
 
 module.exports = nextConfig

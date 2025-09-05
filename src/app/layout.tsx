@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'PhotoBox by DeepSeek',
-  description: 'A modern photo processing application built with Next.js 14',
+  title: 'PhotoBox 工具集',
+  description: '一个专注图片处理的轻量化工具集合',
 }
 
 export default function RootLayout({
