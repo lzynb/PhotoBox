@@ -19,19 +19,14 @@ const config: Config = {
           'Arial',
           'Noto Sans',
           'sans-serif',
-          'Apple Color Emoji',
-          'Segoe UI Emoji',
-          'Segoe UI Symbol',
-          'Noto Color Emoji',
         ],
-      },
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic':
-          'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
     },
   },
   plugins: [],
+  // 确保在生产环境中正确工作
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
 }
 export default config

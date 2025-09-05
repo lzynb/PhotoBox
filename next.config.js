@@ -40,8 +40,10 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // 确保输出配置正确
-  output: 'standalone',
+  // 确保样式在生产环境中正确工作
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
 }
 
 module.exports = nextConfig
