@@ -32,6 +32,37 @@ function runRapidOCR(payload: unknown): Promise<{ success: boolean; text?: strin
 	});
 }
 
+async function callRemoteOCRService(payload: { image: string }): Promise<{ success: boolean; text?: string; error?: string }> {
+  const pythonServiceUrl = process.env.PYTHON_SERVICE_URL;
+  
+  if (!pythonServiceUrl) {
+    return { success: false, error: 'PYTHON_SERVICE_URL environment variable not set' };
+  }
+
+  try {
+    const response = await fetch(`${pythonServiceUrl}/ocr`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        image_data: payload.image
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return { success: false, error: `Remote service error: ${response.status} ${errorText}` };
+    }
+
+    const result = await response.json();
+    return result;
+
+  } catch (error) {
+    return { success: false, error: `Failed to call remote OCR service: ${error instanceof Error ? error.message : 'Unknown error'}` };
+  }
+}
+
 export async function POST(request: NextRequest) {
 	try {
 		const contentType = request.headers.get('content-type') || '';
@@ -50,7 +81,11 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const result = await runRapidOCR(body);
+		// 根据环境选择本地或远程 Python 服务
+		const pythonServiceUrl = process.env.PYTHON_SERVICE_URL;
+		const result = pythonServiceUrl 
+			? await callRemoteOCRService(body)
+			: await runRapidOCR(body);
 		if (result.success) {
 			return NextResponse.json({ success: true, text: result.text || '' });
 		}

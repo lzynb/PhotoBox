@@ -74,6 +74,44 @@ function runRembgPython(payload: RemoveBackgroundRequest, timeoutMs = 120000): P
   });
 }
 
+async function callRemotePythonService(payload: RemoveBackgroundRequest): Promise<{ success: boolean; tempFilePath?: string; error?: string }> {
+  const pythonServiceUrl = process.env.PYTHON_SERVICE_URL;
+  
+  if (!pythonServiceUrl) {
+    return { success: false, error: 'PYTHON_SERVICE_URL environment variable not set' };
+  }
+
+  try {
+    const response = await fetch(`${pythonServiceUrl}/remove-background`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        image_data: payload.image,
+        new_bg_color: payload.newBgColor
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return { success: false, error: `Remote service error: ${response.status} ${errorText}` };
+    }
+
+    const imageBuffer = await response.arrayBuffer();
+    
+    // 创建临时文件保存远程返回的图片
+    const fs = await import('fs/promises');
+    const tempFilePath = join(tmpdir(), `remote_output_${Date.now()}.png`);
+    await fs.writeFile(tempFilePath, Buffer.from(imageBuffer));
+    
+    return { success: true, tempFilePath };
+
+  } catch (error) {
+    return { success: false, error: `Failed to call remote Python service: ${error instanceof Error ? error.message : 'Unknown error'}` };
+  }
+}
+
 export async function GET() {
   return NextResponse.json({ ok: true });
 }
@@ -105,10 +143,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await runRembgPython({
-      image: body.image,
-      newBgColor: body.newBgColor
-    });
+    // 根据环境选择本地或远程 Python 服务
+    const pythonServiceUrl = process.env.PYTHON_SERVICE_URL;
+    const result = pythonServiceUrl 
+      ? await callRemotePythonService({
+          image: body.image,
+          newBgColor: body.newBgColor
+        })
+      : await runRembgPython({
+          image: body.image,
+          newBgColor: body.newBgColor
+        });
 
     if (!result.success) {
       return NextResponse.json(
