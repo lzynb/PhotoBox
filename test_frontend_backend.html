@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>前后端集成测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { border-color: #4CAF50; background-color: #f1f8e9; }
+        .error { border-color: #f44336; background-color: #ffebee; }
+        .loading { border-color: #2196F3; background-color: #e3f2fd; }
+        button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #1976D2; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 前后端集成测试</h1>
+        <p>测试前端与腾讯云云函数的集成情况</p>
+        
+        <div class="test-section" id="health-test">
+            <h3>1. 健康检查测试</h3>
+            <button onclick="testHealth()">测试健康检查</button>
+            <div class="result" id="health-result"></div>
+        </div>
+
+        <div class="test-section" id="cors-test">
+            <h3>2. CORS跨域测试</h3>
+            <button onclick="testCORS()">测试CORS</button>
+            <div class="result" id="cors-result"></div>
+        </div>
+
+        <div class="test-section" id="ocr-test">
+            <h3>3. OCR功能测试</h3>
+            <input type="file" id="ocr-file" accept="image/*" onchange="testOCR()">
+            <div class="result" id="ocr-result"></div>
+        </div>
+
+        <div class="test-section" id="background-test">
+            <h3>4. 背景移除测试</h3>
+            <input type="file" id="bg-file" accept="image/*" onchange="testBackground()">
+            <div class="result" id="bg-result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://1300931050-izxeco6na5.ap-guangzhou.tencentscf.com';
+        
+        function setResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = content;
+            element.parentElement.className = `test-section ${type}`;
+        }
+
+        async function testHealth() {
+            setResult('health-result', '测试中...', 'loading');
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    setResult('health-result', `✅ 健康检查成功\n状态: ${data.status}\n消息: ${data.message}`, 'success');
+                } else {
+                    setResult('health-result', `❌ 健康检查失败\n状态码: ${response.status}\n响应: ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                setResult('health-result', `❌ 请求失败\n错误: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCORS() {
+            setResult('cors-result', '测试中...', 'loading');
+            
+            try {
+                const response = await fetch(`${API_BASE}/ocr`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': 'https://example.com',
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+                
+                if (response.ok) {
+                    const corsHeaders = {
+                        'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                        'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                        'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+                    };
+                    setResult('cors-result', `✅ CORS测试成功\n状态码: ${response.status}\nCORS头: ${JSON.stringify(corsHeaders, null, 2)}`, 'success');
+                } else {
+                    setResult('cors-result', `❌ CORS测试失败\n状态码: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                setResult('cors-result', `❌ CORS测试失败\n错误: ${error.message}`, 'error');
+            }
+        }
+
+        async function testOCR() {
+            const fileInput = document.getElementById('ocr-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                setResult('ocr-result', '请先选择图片文件', 'error');
+                return;
+            }
+
+            setResult('ocr-result', '处理中...', 'loading');
+
+            try {
+                // 转换为base64
+                const base64 = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+
+                const response = await fetch(`${API_BASE}/ocr`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ image: base64 })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    setResult('ocr-result', `✅ OCR测试成功\n识别文本: ${data.text}\n置信度: ${data.confidence}`, 'success');
+                } else {
+                    setResult('ocr-result', `❌ OCR测试失败\n状态码: ${response.status}\n错误: ${data.error || '未知错误'}`, 'error');
+                }
+            } catch (error) {
+                setResult('ocr-result', `❌ OCR测试失败\n错误: ${error.message}`, 'error');
+            }
+        }
+
+        async function testBackground() {
+            const fileInput = document.getElementById('bg-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                setResult('bg-result', '请先选择图片文件', 'error');
+                return;
+            }
+
+            setResult('bg-result', '处理中...', 'loading');
+
+            try {
+                // 转换为base64
+                const base64 = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+
+                const response = await fetch(`${API_BASE}/remove-background`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        image: base64,
+                        backgroundColor: '#FF0000'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    setResult('bg-result', `✅ 背景移除测试成功\n背景色: ${data.backgroundColor}\n返回了处理后的图片数据`, 'success');
+                } else {
+                    setResult('bg-result', `❌ 背景移除测试失败\n状态码: ${response.status}\n错误: ${data.error || '未知错误'}`, 'error');
+                }
+            } catch (error) {
+                setResult('bg-result', `❌ 背景移除测试失败\n错误: ${error.message}`, 'error');
+            }
+        }
+
+        // 页面加载时自动测试健康检查
+        window.onload = function() {
+            testHealth();
+        };
+    </script>
+</body>
+</html>
+

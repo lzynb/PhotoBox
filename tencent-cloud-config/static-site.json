@@ -1,0 +1,17 @@
+{
+  "name": "photobox-frontend",
+  "description": "PhotoBox 前端静态网站",
+  "bucket": "photobox-frontend-{随机后缀}",
+  "region": "ap-beijing",
+  "website": {
+    "indexDocument": "index.html",
+    "errorDocument": "404.html"
+  },
+  "cors": {
+    "allowedOrigins": ["*"],
+    "allowedMethods": ["GET", "POST", "PUT", "DELETE", "HEAD"],
+    "allowedHeaders": ["*"],
+    "maxAgeSeconds": 3600
+  }
+}
+

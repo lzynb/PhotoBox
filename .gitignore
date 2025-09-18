@@ -131,3 +131,48 @@ temp/
 
 # Local development
 .local/
+
+# Deployment files
+*.zip
+*.bat
+*.sh
+*.ps1
+*.py
+temp_extract/
+api-backup/
+build-static.bat
+build-with-*.bat
+build-with-*.js
+check-*.bat
+check-*.js
+create_*.py
+deploy_*.py
+export-static.*
+fix-*.bat
+fix-*.js
+generate-*.js
+quick-*.bat
+quick-*.py
+setup_*.py
+simple_*.ps1
+test-*.html
+test-*.py
+test_*.bat
+test_*.ps1
+upload-*.bat
+upload-*.ps1
+upload_*.py
+verify-*.js
+
+# Documentation files (keep only essential ones)
+!README.md
+!DEPLOYMENT_GUIDE.md
+!tencent-cloud-deploy.md
+!QUICK_DEPLOY_TENCENT.md
+
+# Configuration backups
+next.config.backup.js
+next.config.temp.js
+
+# Environment files
+.env.local

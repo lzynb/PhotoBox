@@ -1,0 +1,41 @@
+{
+  "name": "photobox-backend",
+  "description": "PhotoBox Python 后端服务",
+  "runtime": "Python3.9",
+  "handler": "main.handler",
+  "memorySize": 512,
+  "timeout": 30,
+  "environment": {
+    "variables": {
+      "PYTHON_VERSION": "3.9"
+    }
+  },
+  "triggers": [
+    {
+      "type": "apigw",
+      "properties": {
+        "protocol": "https",
+        "serviceName": "photobox-api",
+        "description": "PhotoBox API 网关",
+        "environment": "release",
+        "endpoints": [
+          {
+            "path": "/ocr",
+            "method": "POST",
+            "function": "photobox-backend"
+          },
+          {
+            "path": "/remove-background",
+            "method": "POST", 
+            "function": "photobox-backend"
+          }
+        ]
+      }
+    }
+  ]
+}
+
+
+
+
+

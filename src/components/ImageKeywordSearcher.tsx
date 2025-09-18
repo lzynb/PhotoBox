@@ -62,7 +62,11 @@ const ImageKeywordSearcher: React.FC = () => {
 
       setImages(prev => prev.map(img => img.id === image.id ? { ...img, progress: 25, isProcessing: true, error: undefined } : img));
 
-      const response = await fetch('/api/ocr', {
+      // 检查是否有腾讯云 API 网关地址
+      const tencentApiUrl = process.env.NEXT_PUBLIC_TENCENT_API_URL || 'https://1300931050-izxeco6na5.ap-guangzhou.tencentscf.com';
+      const apiUrl = tencentApiUrl ? `${tencentApiUrl}/ocr` : '/api/ocr';
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: base64, filename: image.file.name }),

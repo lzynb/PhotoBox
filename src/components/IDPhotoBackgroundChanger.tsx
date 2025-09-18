@@ -83,7 +83,11 @@ const IDPhotoBackgroundChanger: React.FC = () => {
   const removeBackground = useCallback(async (imageFile: File, colorHex: string): Promise<string> => {
     const base64 = await fileToCompressedDataURL(imageFile);
 
-    const response = await fetch('/api/remove-background', {
+    // 检查是否有腾讯云 API 网关地址
+    const tencentApiUrl = process.env.NEXT_PUBLIC_TENCENT_API_URL || 'https://1300931050-izxeco6na5.ap-guangzhou.tencentscf.com';
+    const apiUrl = tencentApiUrl ? `${tencentApiUrl}/remove-background` : '/api/remove-background';
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

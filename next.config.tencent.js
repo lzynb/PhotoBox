@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Vercel 部署配置
+  // 腾讯云静态网站托管：启用静态导出
+  output: 'export',
   trailingSlash: true,
   // 环境变量配置
   env: {
@@ -15,7 +16,7 @@ const nextConfig = {
     serverComponentsExternalPackages: ['tesseract.js'],
   },
   swcMinify: true,
-  // 简化 webpack 配置
+  // 简化 webpack 配置，移除可能导致构建问题的配置
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {

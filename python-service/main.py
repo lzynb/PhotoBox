@@ -1,154 +1,155 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
-import uvicorn
-import base64
-import io
-import sys
-import os
-import tempfile
-import subprocess
+# 腾讯云云函数入口文件 - 简化测试版本
 import json
-from PIL import Image
-import numpy as np
 
-app = FastAPI(title="PhotoBox Python Service", version="1.0.0")
-
-# 配置 CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 生产环境建议限制具体域名
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.get("/")
-async def root():
-    return {"message": "PhotoBox Python Service is running"}
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "service": "python-backend"}
-
-@app.post("/remove-background")
-async def remove_background(
-    image_data: str = None,
-    new_bg_color: str = "#FFFFFF"
-):
+def handler(event, context):
     """
-    移除背景并添加新背景色
+    腾讯云云函数入口 - 支持HTTP触发器
     """
     try:
-        if not image_data:
-            raise HTTPException(status_code=400, detail="No image data provided")
+        # 处理OPTIONS预检请求（CORS）
+        if event.get('httpMethod') == 'OPTIONS':
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                    'Access-Control-Max-Age': '86400'
+                },
+                'body': ''
+            }
         
-        # 解码 base64 图片数据
-        try:
-            image_bytes = base64.b64decode(image_data.split(',')[1] if ',' in image_data else image_data)
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid base64 image data: {str(e)}")
+        # 解析事件数据
+        body = {}
+        if 'body' in event and event['body']:
+            if isinstance(event['body'], str):
+                body = json.loads(event['body'])
+            else:
+                body = event['body']
         
-        # 创建临时文件
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as input_file:
-            input_file.write(image_bytes)
-            input_path = input_file.name
+        # 获取请求方法和路径
+        method = event.get('httpMethod', 'POST')
+        path = event.get('path', '/')
         
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as output_file:
-            output_path = output_file.name
+        # 简单的健康检查
+        if path == '/health' or path == '/':
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({
+                    'status': 'healthy',
+                    'message': 'PhotoBox API is running',
+                    'path': path,
+                    'method': method
+                })
+            }
         
-        try:
-            # 调用 Python 脚本处理图片
-            result = subprocess.run([
-                sys.executable, 
-                os.path.join(os.path.dirname(__file__), 'remove_background.py'),
-                input_path, output_path, new_bg_color
-            ], capture_output=True, text=True, timeout=30)
+        # 根据路径路由到不同的处理函数
+        if path == '/ocr' or path.endswith('/ocr'):
+            return handle_ocr(body)
+        elif path == '/remove-background' or path.endswith('/remove-background'):
+            return handle_remove_background(body)
+        else:
+            return {
+                'statusCode': 404,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+                },
+                'body': json.dumps({'error': 'Not Found', 'path': path})
+            }
             
-            if result.returncode != 0:
-                raise HTTPException(
-                    status_code=500, 
-                    detail=f"Python script failed: {result.stderr}"
-                )
-            
-            # 读取处理后的图片
-            with open(output_path, 'rb') as f:
-                processed_image = f.read()
-            
-            return Response(
-                content=processed_image,
-                media_type="image/png",
-                headers={"Content-Disposition": "attachment; filename=processed.png"}
-            )
-            
-        finally:
-            # 清理临时文件
-            try:
-                os.unlink(input_path)
-                os.unlink(output_path)
-            except:
-                pass
-                
-    except HTTPException:
-        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({'error': str(e)})
+        }
 
-@app.post("/ocr")
-async def ocr_processing(image_data: str = None):
-    """
-    图片文字识别
-    """
+def handle_ocr(body):
+    """处理 OCR 请求 - 简化版本"""
     try:
+        # 获取图片数据
+        image_data = body.get('image')
         if not image_data:
-            raise HTTPException(status_code=400, detail="No image data provided")
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'success': False, 'error': 'No image data provided'})
+            }
         
-        # 解码 base64 图片数据
-        try:
-            image_bytes = base64.b64decode(image_data.split(',')[1] if ',' in image_data else image_data)
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid base64 image data: {str(e)}")
+        # 简化处理：返回模拟结果
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'success': True,
+                'text': 'OCR功能测试成功 - 这是模拟的识别结果',
+                'confidence': 0.95
+            })
+        }
         
-        # 创建临时文件
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as input_file:
-            input_file.write(image_bytes)
-            input_path = input_file.name
-        
-        try:
-            # 调用 OCR 脚本
-            result = subprocess.run([
-                sys.executable, 
-                os.path.join(os.path.dirname(__file__), 'ocr_rapidocr.py')
-            ], input=image_bytes, capture_output=True, text=True, timeout=30)
-            
-            if result.returncode != 0:
-                raise HTTPException(
-                    status_code=500, 
-                    detail=f"OCR script failed: {result.stderr}"
-                )
-            
-            # 解析结果
-            try:
-                ocr_result = json.loads(result.stdout.strip())
-                return ocr_result
-            except json.JSONDecodeError:
-                return {
-                    "success": False,
-                    "text": "",
-                    "error": "Failed to parse OCR result"
-                }
-                
-        finally:
-            # 清理临时文件
-            try:
-                os.unlink(input_path)
-            except:
-                pass
-                
-    except HTTPException:
-        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({'success': False, 'error': str(e)})
+        }
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+def handle_remove_background(body):
+    """处理背景移除请求 - 简化版本"""
+    try:
+        # 获取图片数据和背景色
+        image_data = body.get('image')
+        background_color = body.get('backgroundColor', '#FFFFFF')
+        
+        if not image_data:
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'success': False, 'error': 'No image data provided'})
+            }
+        
+        # 简化处理：返回模拟结果
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                'success': True,
+                'message': '背景移除功能测试成功',
+                'backgroundColor': background_color
+            })
+        }
+            
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({'success': False, 'error': str(e)})
+        }

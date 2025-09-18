@@ -1,7 +1,17 @@
 {
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_TENCENT_API_URL": "@next_public_tencent_api_url"
+  },
   "functions": {
     "src/app/api/**/*.ts": {
-      "maxDuration": 60
+      "runtime": "nodejs18.x"
     }
   }
 }
