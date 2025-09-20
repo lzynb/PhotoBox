@@ -84,7 +84,7 @@ const IDPhotoBackgroundChanger: React.FC = () => {
     const base64 = await fileToCompressedDataURL(imageFile);
 
     // 检查是否有腾讯云 API 网关地址
-    const tencentApiUrl = process.env.NEXT_PUBLIC_TENCENT_API_URL || 'https://1300931050-izxeco6na5.ap-guangzhou.tencentscf.com';
+    const tencentApiUrl = process.env.NEXT_PUBLIC_TENCENT_API_URL || 'https://1300931050-hb0xxy3l23.ap-guangzhou.tencentscf.com';
     const apiUrl = tencentApiUrl ? `${tencentApiUrl}/remove-background` : '/api/remove-background';
 
     const response = await fetch(apiUrl, {

@@ -176,3 +176,5 @@ next.config.temp.js
 
 # Environment files
 .env.local
+
+.vercel
