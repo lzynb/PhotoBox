@@ -83,9 +83,8 @@ const IDPhotoBackgroundChanger: React.FC = () => {
   const removeBackground = useCallback(async (imageFile: File, colorHex: string): Promise<string> => {
     const base64 = await fileToCompressedDataURL(imageFile);
 
-    // 检查是否有腾讯云 API 网关地址
-    const tencentApiUrl = process.env.NEXT_PUBLIC_TENCENT_API_URL || 'https://1300931050-izxeco6na5.ap-guangzhou.tencentscf.com';
-    const apiUrl = tencentApiUrl ? `${tencentApiUrl}/remove-background` : '/api/remove-background';
+    // 使用 Vercel API 路由
+    const apiUrl = '/api/remove-background';
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -279,7 +278,7 @@ const IDPhotoBackgroundChanger: React.FC = () => {
           
           {/* Predefined Colors */}
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mb-4">
-            {predefinedColors.map((color) => (
+            {predefinedColors.map((color: BackgroundColor) => (
               <button
                 key={color.name}
                 onClick={() => handleColorChange(color.value)}
