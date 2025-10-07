@@ -124,7 +124,7 @@ tmp/
 temp/
 
 # Python model files (if large)
-*.onnx
+# *.onnx - 注释掉，Vercel部署需要模型文件
 *.pth
 *.pt
 *.pkl
@@ -137,9 +137,12 @@ temp/
 *.bat
 *.sh
 *.ps1
-*.py
+# *.py - 注释掉，需要上传API文件
 temp_extract/
 api-backup/
+
+# 但是排除API目录中的Python文件（需要上传）
+!api/*.py
 build-static.bat
 build-with-*.bat
 build-with-*.js
